@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,7 +12,6 @@ public class Starplot
 	private Color[] lookuptable;
 	private float[] data;
 	private String name;
-	private Boolean flexibleAxes;
 	private Vector3[] axisPositions;
 	private GameObject parent;
 	private Boolean isVisible;
@@ -22,22 +20,53 @@ public class Starplot
     /// Gets or sets the axis max.
     /// </summary>
     /// <value>The axis max.</value>
-    public float axisMax { get; set; }
+    public float[] AxisMax { get; set; }
 
     /// <summary>
     /// Gets or sets the radius.
     /// </summary>
     /// <value>The radius.</value>
-    public float radius { get; set; }
+    public float Radius { get; set; }
 
     /// <summary>
     /// Gets or sets the unit.
     /// </summary>
     /// <value>The unit.</value>
-	public String[] unit { get; set; }
+	public String[] Units { get; set; }
 
-    public Color color { get; set; }
+    /// <summary>
+    /// set the color of the data
+    /// </summary>
+    private Color _color;
+    public Color Color {
+        get { return _color; }
+        set
+        {
+            _color = value;
+            this.Colors = new Color[amountOfAxes];
+            for (int i = 0; i < amountOfAxes; i++)
+            {
+                this.Colors[i] = value;
+            }
+            
+        }
+    }
 
+    /// <summary>
+    /// set colors for every point.
+    /// </summary>
+    private Color[] _colors;
+    public Color[] Colors
+    {
+        get { return _colors; }
+        set
+        {
+            _colors = value;
+        }
+    }
+    /// <summary>
+    /// sets the line width.
+    /// </summary>
     private float _lineWidth;
     public float LineWidth
     {
@@ -57,78 +86,46 @@ public class Starplot
         }
     }
 
-	/// <summary>
-	/// Creates a new star plot.
-	/// </summary>
-	/// <param name="amountOfAxes">The number of axes <b>greater then 2.</b></param>
-	/// <param name="position">The position of the star plot.</param>
-	/// <param name="data">The data of each axes.</param>
-	/// <param name="axisMax">the maximum value of the axes</param>
-	/// <param name="parent">the parent Object</param>
-	public Starplot(int amountOfAxes, Vector3 position, String name, float[] data, float axisMax, GameObject parent)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="T:Starplot"/> class.
+    /// </summary>
+    /// <param name="position">the local position on parent.</param>
+    /// <param name="axisPositions">world positions of axes.</param>
+    /// <param name="radius">Radius.</param>
+    /// <param name="name">Name.</param>
+    /// <param name="data">Data for each axis</param>
+    /// <param name="axisMax">Axis max.</param>
+    /// <param name="parent">the parent GameObject</param>
+    public Starplot(Vector3 position, int amountOfAxes, float radius, String name, float[] data, float[] axisMax,  GameObject parent)
+    {
+        this.parent = parent;
+
+        this.DefaultSetUp(amountOfAxes, position, name, data, axisMax, radius, null);
+
+        Vector3 rotation = new Vector3(0, 0, 0);
+        SetRotation(Quaternion.Euler(rotation));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="T:Starplot"/> class.
+    /// </summary>
+    /// <param name="position">the local position on parent.</param>
+    /// <param name="axisPositions">world positions of axes.</param>
+    /// <param name="radius">Radius.</param>
+    /// <param name="name">Name.</param>
+    /// <param name="data">Data for each axis</param>
+    /// <param name="axisMax">Axis max.</param>
+    /// <param name="parent">the parent GameObject</param>
+    public Starplot(Vector3 position, Vector3[] axisPositions, float radius, String name, float[] data, float[] axisMax, GameObject parent)
 	{
 		this.parent = parent;
 
-		defaultSetUp(amountOfAxes, position, name, data, axisMax, 5, false, null);
-
-		background.transform.parent = parent.transform;
-		background.transform.localPosition = position;
-		background.transform.localScale = Vector3.one * 5;
-		Vector3 rotation = new Vector3(0, 0, 0);
-		SetRotation(Quaternion.Euler(rotation));
-	}
-
-	public Starplot(int amountOfAxes, Vector3 position, float radius, String name, float[] data, float axisMax)
-	{
-        defaultSetUp(amountOfAxes, position, name, data, axisMax, radius, false, null);
-
-		background.transform.position = position;
-		background.transform.localScale = new Vector3(radius, radius, radius);
-		Vector3 rotation = new Vector3(90, 0, 0);
-		SetRotation(Quaternion.Euler(rotation));
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="T:Starplot"/> class.
-	/// </summary>
-	/// <param name="position">the local position on parent.</param>
-	/// <param name="axisPositions">world positions of axes.</param>
-	/// <param name="radius">Radius.</param>
-	/// <param name="name">Name.</param>
-	/// <param name="data">Data for each axis</param>
-	/// <param name="axisMax">Axis max.</param>
-	/// <param name="parent">the parent GameObject</param>
-	public Starplot(Vector3 position, Vector3[] axisPositions, float radius, String name, float[] data, float axisMax, GameObject parent)
-	{
-		this.parent = parent;
-
-        this.defaultSetUp(axisPositions.Length, position, name, data, axisMax, radius, true, axisPositions);
+        this.DefaultSetUp(axisPositions.Length, position, name, data, axisMax, radius, axisPositions);
 
 		Vector3 rotation = new Vector3(0, 0, 0);
 		SetRotation(Quaternion.Euler(rotation));
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="T:Starplot"/> class.
-	/// </summary>
-	/// <param name="position">the local position on parent.</param>
-	/// <param name="axisPositions">world positions of axes.</param>
-	/// <param name="radius">Radius.</param>
-	/// <param name="name">Name.</param>
-	/// <param name="data">Data for each axis</param>
-	/// <param name="axisMax">Axis max.</param>
-	/// <param name="parent">the parent GameObject</param>
-	/// <param name="unit">the unit of the values</param>
-	public Starplot(Vector3 position, Vector3[] axisPositions, float radius, String name, float[] data, float axisMax, GameObject parent, String[] unit)
-	{
-		this.parent = parent;
-		this.unit = unit;
-
-        this.defaultSetUp(axisPositions.Length, position, name, data, axisMax, radius, true, axisPositions);
-
-		Vector3 rotation = new Vector3(0, 0, 0);
-		SetRotation(Quaternion.Euler(rotation));
-	}
 	/// <summary>
 	/// Destroy the star graph.
 	/// </summary>
@@ -153,36 +150,36 @@ public class Starplot
     /// <param name="radius">Radius.</param>
     /// <param name="flexibleAxes">If set to <c>true</c> flexible axes.</param>
     /// <param name="axisPositions">Axis positions.</param>
-	private void defaultSetUp(int amountOfAxes, Vector3 position, String name, float[] data, float axisMax, float radius, bool flexibleAxes, Vector3[] axisPositions)
+	private void DefaultSetUp(int amountOfAxes, Vector3 position, String name, float[] data, float[] axisMax, float radius, Vector3[] axisPositions)
 	{
         if (amountOfAxes < 3)
 		{
 			throw new ArgumentOutOfRangeException("amountOfAxes");
 		}
         this.isVisible = true;
-		this.axisMax = axisMax;
+		this.AxisMax = axisMax;
 		this.amountOfAxes = amountOfAxes;
 		this.data = data;
 		this.name = name;
-		this.radius = radius;
-        this.flexibleAxes = flexibleAxes;
+		this.Radius = radius;
         this._lineWidth = 0.0025f;
-        this.color = Color.cyan;
+        this.Color = Color.cyan;
+
         axes = new List<GameObject>();
 		meshes = new List<GameObject>();
 
-		createBackground(position);
+		CreateBackground(position);
         if(axisPositions != null){
        //     this.axisPositions = tranformToLocalPositions(axisPositions);    
         }
-		createAxes();
-		renderGraph();
+		CreateAxes();
+		RenderGraph();
 	}
     /// <summary>
     /// Creates the background.
     /// </summary>
     /// <param name="position">the position of the starplot.</param>
-	private void createBackground(Vector3 position)
+	private void CreateBackground(Vector3 position)
 	{
 		background = GameObject.Find(name);
 		if (background == null)
@@ -205,7 +202,7 @@ public class Starplot
 				background.transform.parent = parent.transform;
 			}
 
-			background.transform.localScale = Vector3.one * radius;
+			background.transform.localScale = Vector3.one * Radius;
 			background.transform.localPosition = position;
 		}
 		else
@@ -217,7 +214,7 @@ public class Starplot
     /// <summary>
     /// Creates the axes.
     /// </summary>
-	private void createAxes()
+	private void CreateAxes()
 	{
 		var length = 0.0f;
 		if (axisPositions == null) axisPositions = new Vector3[amountOfAxes];
@@ -228,14 +225,14 @@ public class Starplot
 			GameObject axis = GameObject.Find(name + "_Axis" + i);
 			if (axis == null)
 			{
-                length = radius;
+                length = Radius;
                 Vector3 position;
 				if (axisPositions[i] == Vector3.zero)
 				{
 					position = new Vector3(0, 0, 0.9f);
 					angle = 360.0f / amountOfAxes * i;
 					axisPositions[i] = position;
-					Array.Sort(axisPositions, compareClockwise);
+					Array.Sort(axisPositions, CompareClockwise);
 				}
 				else
 				{
@@ -244,16 +241,18 @@ public class Starplot
 
 				axis = new GameObject(name + "_Axis" + i);
 				LineRenderer lr = axis.AddComponent<LineRenderer>();
-				lr.material = new Material(Shader.Find("Diffuse"));
-				lr.material.color = Color.black;
-				lr.startWidth = _lineWidth;
+                lr.material = new Material(Shader.Find("Diffuse"))
+                {
+                    color = Color.black
+                };
+                lr.startWidth = _lineWidth;
 				lr.endWidth = _lineWidth;
 				lr.useWorldSpace = false;
 				lr.SetPosition(0, Vector3.zero);
-				lr.SetPosition(1, position * radius);
+				lr.SetPosition(1, position * Radius);
 
                 axis.transform.parent = background.transform;
-                axis.transform.localScale = Vector3.one / radius;
+                axis.transform.localScale = Vector3.one / Radius;
 				axis.transform.localPosition = new Vector3(0, 0.03f, 0);
 
 				axis.transform.localRotation = Quaternion.Euler(0, angle, 0);
@@ -262,7 +261,7 @@ public class Starplot
 			else
 			{
 				LineRenderer lr = axis.GetComponent<LineRenderer>();
-				lr.SetPosition(1, axisPositions[i] * radius);
+				lr.SetPosition(1, axisPositions[i] * Radius);
 				axis.transform.localPosition = new Vector3(0, 0.03f, 0);
 
 				var currentLength = (lr.GetPosition(1) - lr.GetPosition(0)).magnitude;
@@ -278,7 +277,7 @@ public class Starplot
     /// <summary>
     /// Creates the data labels.
     /// </summary>
-	private void createDataLabels()
+	private void CreateDataLabels()
 	{
 		for (int i = 0; i < amountOfAxes; i++)
 		{
@@ -294,9 +293,11 @@ public class Starplot
 
 				bg.transform.localScale = new Vector3(0.03f, 0.03f, 0.01f);
 				Renderer renderer = bg.GetComponent<Renderer>();
-				Material mat = new Material(Shader.Find("Diffuse"));
-				mat.color = Color.white;
-				renderer.material = mat;
+                Material mat = new Material(Shader.Find("Diffuse"))
+                {
+                    color = Color.white
+                };
+                renderer.material = mat;
 			}
 			GameObject dataLabel = GameObject.Find(axes[i].name + "_label");
 			if (dataLabel == null)
@@ -323,15 +324,15 @@ public class Starplot
 				text.transform.localScale = new Vector3(0.002f, 0.002f, 0.001f);
 				text.alignment = TextAnchor.MiddleCenter;
 				text.color = Color.black;
-				text.font = Font.CreateDynamicFontFromOSFont("Arial", (int)radius * 7);
+				text.font = Font.CreateDynamicFontFromOSFont("Arial", (int)Radius * 7);
 				text.fontSize = 34;
 				text.fontStyle = FontStyle.Bold;
 				text.verticalOverflow = VerticalWrapMode.Overflow;
 				text.horizontalOverflow = HorizontalWrapMode.Overflow;
 			}
             String labelText = Math.Round(data[i]) + "";
-            if(unit != null){
-                labelText += " " + unit[i];
+            if(Units != null){
+                labelText += " " + Units[i];
             }
             text.text = labelText;
             foreach(Transform transform in labelObj.transform)
@@ -354,7 +355,7 @@ public class Starplot
     /// </summary>
     /// <param name="v1">Vector 1.</param>
     /// <param name="v2">Vector 2.</param>
-	private int compareClockwise(Vector3 v1, Vector3 v2)
+	private int CompareClockwise(Vector3 v1, Vector3 v2)
 	{
 		if (v1.x >= 0)
 		{
@@ -380,7 +381,7 @@ public class Starplot
     /// </summary>
     /// <returns>The to local positions.</returns>
     /// <param name="worldPositions">World positions.</param>
-	private Vector3[] tranformToLocalPositions(Vector3[] worldPositions)
+	private Vector3[] TranformToLocalPositions(Vector3[] worldPositions)
 	{
 		Vector3[] localPositions = new Vector3[worldPositions.Length];
 		for (int i = 0; i < worldPositions.Length; i++)
@@ -397,19 +398,19 @@ public class Starplot
     /// <returns>The point on theaxis.</returns>
     /// <param name="data">the data.</param>
     /// <param name="postion">the position.</param>
-    private Vector3 getPointOnAxis(float data, Vector3 postion)
+    private Vector3 GetPointOnAxis(float data, Vector3 postion, float axisMax)
 	{
 		// position.x -> end of Axes
-		float x = data * (postion.x / radius) / axisMax;
-		float y = data * (postion.y / radius) / axisMax;
-		float z = data * (postion.z / radius) / axisMax;
-		return new Vector3(x, y, z);
+		float x = data * (postion.x / Radius) / axisMax;
+		float y = data * (postion.y / Radius) / axisMax;
+		float z = data * (postion.z / Radius) / axisMax;
+        return new Vector3(x, y, z);
 	}
 
     /// <summary>
     /// Renders the graph.
     /// </summary>
-	private void renderGraph()
+	private void RenderGraph()
 	{
 		if (axes.ToArray().Length > 0)
 		{
@@ -420,23 +421,26 @@ public class Starplot
 				axes[i].GetComponent<LineRenderer>().GetPositions(positions);
 				positions[1] = axes[i].transform.localRotation * positions[1];
 				// Point on current axes           
-				Vector3 pointA = getPointOnAxis(data[i], positions[1]);
+				Vector3 pointA = GetPointOnAxis(data[i], positions[1], AxisMax[i]);
 
 				// point on next Axis
 				Vector3 pointB;
+                int nextIndex = 0;
 				if (i + 1 < data.Length)
 				{
-					Vector3[] positions1 = new Vector3[2];
+                    nextIndex = i+1;
+                    Vector3[] positions1 = new Vector3[2];
 					axes[i + 1].GetComponent<LineRenderer>().GetPositions(positions1);
 					positions1[1] = axes[i + 1].transform.localRotation * positions1[1];                   
-					pointB = getPointOnAxis(data[i + 1], positions1[1]);
+					pointB = GetPointOnAxis(data[i + 1], positions1[1], AxisMax[i + 1]);
 				}
 				else
 				{
+                    nextIndex = 0;
 					Vector3[] positions1 = new Vector3[2];
 					axes[0].GetComponent<LineRenderer>().GetPositions(positions1);
 					positions1[1] = axes[0].transform.localRotation * positions1[1];                    
-					pointB = getPointOnAxis(data[0], positions1[1]);
+					pointB = GetPointOnAxis(data[0], positions1[1], AxisMax[0]);
 				}
                
                 // get Mesh
@@ -480,9 +484,9 @@ public class Starplot
 				mesh.RecalculateNormals();
 
 				Color[] colors = new Color[]{
-					color,
-					color,
-					color,
+					Colors[i],
+					Colors[0],
+					Colors[nextIndex],
 				 };
 
 				mesh.colors = colors;
@@ -531,10 +535,9 @@ public class Starplot
 		}
 
 		if (!this.IsHidden())
-		{
-			createDataLabels();
-
-			renderGraph();
+        {
+            RenderGraph();
+            CreateDataLabels();
 		}
 
 
@@ -566,7 +569,7 @@ public class Starplot
 	public void SetAxisPositions(Vector3[] axisPositions)
 	{
 		// transform position from world space to local spacd
-		Vector3[] localPositions = tranformToLocalPositions(axisPositions);
+		Vector3[] localPositions = TranformToLocalPositions(axisPositions);
 		// Array.Sort(localPositions, (a, b) => compareClockwise(a, b));
 
 		Boolean different = false;
@@ -628,8 +631,8 @@ public class Starplot
 					}
 				}
 			}
-			createAxes();
-			renderGraph();
+			CreateAxes();
+			RenderGraph();
 			foreach (GameObject axis in axes)
 			{
 				axis.transform.localRotation = Quaternion.Euler(0, 0, 0);
@@ -677,8 +680,8 @@ public class Starplot
 				axis.GetComponent<Renderer>().enabled = true;
 			}
 
-			createDataLabels();
-			renderGraph();
+			CreateDataLabels();
+			RenderGraph();
 		}
 	}
 
